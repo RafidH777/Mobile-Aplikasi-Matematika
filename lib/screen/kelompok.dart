@@ -12,7 +12,7 @@ class KelompokScreen extends StatelessWidget {
     {'nama': 'Akrama Naufa Aundafi', 'nim': '124240063'},
   ];
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -22,7 +22,14 @@ class KelompokScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: _primaryColor),
+                onPressed: () => Navigator.pop(context),
+                padding: EdgeInsets.zero,
+                alignment: Alignment.centerLeft,
+              ),
+              const SizedBox(height: 8),
               const Text(
                 'Data Kelompok',
                 style: TextStyle(
@@ -46,7 +53,7 @@ class KelompokScreen extends StatelessWidget {
                     final nama = anggota['nama']!;
                     final nim = anggota['nim']!;
                     final inisial = nama.isNotEmpty ? nama[0].toUpperCase() : '?';
-
+ 
                     return _AnggotaCard(
                       inisial: inisial,
                       nama: nama,
@@ -62,20 +69,20 @@ class KelompokScreen extends StatelessWidget {
     );
   }
 }
-
+ 
 class _AnggotaCard extends StatelessWidget {
   final String inisial;
   final String nama;
   final String nim;
-
+ 
   const _AnggotaCard({
     required this.inisial,
     required this.nama,
     required this.nim,
   });
-
+ 
   static const Color _primaryColor = Color(0xFF1A1A1A);
-
+ 
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -124,3 +131,4 @@ class _AnggotaCard extends StatelessWidget {
     );
   }
 }
+ 
