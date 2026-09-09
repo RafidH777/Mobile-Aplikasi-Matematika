@@ -8,12 +8,189 @@ class KalkulatorScreen extends StatefulWidget {
 }
 
 class _KalkulatorScreenState extends State<KalkulatorScreen> {
+  final TextEditingController _angka1Controller = TextEditingController();
+  final TextEditingController _angka2Controller = TextEditingController();
+
+  String _operator = '+';
+  String _hasil = '';
+
+  @override
+  void dispose() {
+    _angka1Controller.dispose();
+    _angka2Controller.dispose();
+    super.dispose();
+  }
+
+  void _hitung() {
+    final teks1 = _angka1Controller.text.trim();
+    final teks2 = _angka2Controller.text.trim();
+
+    // Error handling: input kosong
+    if (teks1.isEmpty || teks2.isEmpty) {
+      setState(() => _hasil = 'Input tidak boleh kosong');
+      return;
+    }
+
+    // Error handling: bilangan tak valid
+    // pakai double.tryParse supaya mendukung angka besar (100 juta, 250 juta, dst)
+    // dan juga desimal, tanpa melempar exception langsung
+    final angka1 = double.tryParse(teks1.replaceAll(',', '.'));
+    final angka2 = double.tryParse(teks2.replaceAll(',', '.'));
+
+    if (angka1 == null || angka2 == null) {
+      setState(() => _hasil = 'Bilangan tak valid');
+      return;
+    }
+
+    // Error handling: nilai tak hingga / NaN (misal hasil parsing ekstrem)
+    if (angka1.isNaN || angka2.isNaN || angka1.isInfinite || angka2.isInfinite) {
+      setState(() => _hasil = 'Bilangan tak valid');
+      return;
+    }
+
+    try {
+      double hasilOperasi;
+
+      switch (_operator) {
+        case '+':
+          hasilOperasi = angka1 + angka2;
+          break;
+        case '-':
+          hasilOperasi = angka1 - angka2;
+          break;
+        case '×':
+          hasilOperasi = angka1 * angka2;
+          break;
+        case '÷':
+          // Error handling: pembagian dengan nol
+          if (angka2 == 0) {
+            setState(() => _hasil = 'Tidak bisa membagi dengan nol');
+            return;
+          }
+          hasilOperasi = angka1 / angka2;
+          break;
+        default:
+          setState(() => _hasil = 'Operator tidak dikenali');
+          return;
+      }
+
+      // Error handling: hasil operasi overflow / tak hingga
+      if (hasilOperasi.isInfinite || hasilOperasi.isNaN) {
+        setState(() => _hasil = 'Hasil terlalu besar / tidak valid');
+        return;
+      }
+
+      setState(() => _hasil = _formatHasil(hasilOperasi));
+    } catch (e) {
+      // Error handling umum: fallback untuk kesalahan tak terduga
+      setState(() => _hasil = 'Terjadi kesalahan saat menghitung');
+    }
+  }
+
+  // Format hasil: hilangkan .0 kalau hasilnya bilangan bulat,
+  // dan beri pemisah ribuan supaya angka besar (100 juta, dst) enak dibaca
+  String _formatHasil(double value) {
+    final bool isBulat = value == value.roundToDouble();
+
+    if (isBulat) {
+      final BigInt bulat = BigInt.from(value);
+      return _beriPemisahRibuan(bulat.toString());
+    } else {
+      // batasi 6 angka di belakang koma biar tidak kepanjangan
+      String teks = value.toStringAsFixed(6);
+      teks = teks.replaceAll(RegExp(r'0+$'), '');
+      teks = teks.replaceAll(RegExp(r'\.$'), '');
+      final parts = teks.split('.');
+      final bagianDepan = _beriPemisahRibuan(parts[0]);
+      return parts.length > 1 ? '$bagianDepan,${parts[1]}' : bagianDepan;
+    }
+  }
+
+  String _beriPemisahRibuan(String angka) {
+    final bool negatif = angka.startsWith('-');
+    if (negatif) angka = angka.substring(1);
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < angka.length; i++) {
+      if (i > 0 && (angka.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(angka[i]);
+    }
+    return negatif ? '-${buffer.toString()}' : buffer.toString();
+  }
+
+  Widget _tombolOperator(String simbol) {
+    final bool aktif = _operator == simbol;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ChoiceChip(
+        label: Text(simbol, style: const TextStyle(fontSize: 16)),
+        selected: aktif,
+        onSelected: (_) => setState(() => _operator = simbol),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Kalkulator')),
-      body: const Center(
-        child: Text('TODO: form tambah, kurang, kali, bagi'),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: _angka1Controller,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Angka pertama',
+                hintText: 'contoh: 100000000',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _tombolOperator('+'),
+                _tombolOperator('-'),
+                _tombolOperator('×'),
+                _tombolOperator('÷'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _angka2Controller,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Angka kedua',
+                hintText: 'contoh: 250000000',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _hitung,
+              child: const Text('Hitung'),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _hasil,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
