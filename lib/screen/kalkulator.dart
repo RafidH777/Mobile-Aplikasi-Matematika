@@ -25,15 +25,13 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
     final teks1 = _angka1Controller.text.trim();
     final teks2 = _angka2Controller.text.trim();
 
-    // Error handling: input kosong
+    
     if (teks1.isEmpty || teks2.isEmpty) {
       setState(() => _hasil = 'Input tidak boleh kosong');
       return;
     }
 
-    // Error handling: bilangan tak valid
-    // pakai double.tryParse supaya mendukung angka besar (100 juta, 250 juta, dst)
-    // dan juga desimal, tanpa melempar exception langsung
+    
     final angka1 = double.tryParse(teks1.replaceAll(',', '.'));
     final angka2 = double.tryParse(teks2.replaceAll(',', '.'));
 
@@ -42,7 +40,7 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
       return;
     }
 
-    // Error handling: nilai tak hingga / NaN (misal hasil parsing ekstrem)
+    
     if (angka1.isNaN || angka2.isNaN || angka1.isInfinite || angka2.isInfinite) {
       setState(() => _hasil = 'Bilangan tak valid');
       return;
@@ -62,7 +60,7 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
           hasilOperasi = angka1 * angka2;
           break;
         case '÷':
-          // Error handling: pembagian dengan nol
+          
           if (angka2 == 0) {
             setState(() => _hasil = 'Tidak bisa membagi dengan nol');
             return;
@@ -74,7 +72,7 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
           return;
       }
 
-      // Error handling: hasil operasi overflow / tak hingga
+      
       if (hasilOperasi.isInfinite || hasilOperasi.isNaN) {
         setState(() => _hasil = 'Hasil terlalu besar / tidak valid');
         return;
@@ -82,13 +80,13 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
 
       setState(() => _hasil = _formatHasil(hasilOperasi));
     } catch (e) {
-      // Error handling umum: fallback untuk kesalahan tak terduga
+      
       setState(() => _hasil = 'Terjadi kesalahan saat menghitung');
     }
   }
 
-  // Format hasil: hilangkan .0 kalau hasilnya bilangan bulat,
-  // dan beri pemisah ribuan supaya angka besar (100 juta, dst) enak dibaca
+  
+  
   String _formatHasil(double value) {
     final bool isBulat = value == value.roundToDouble();
 
@@ -96,7 +94,7 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
       final BigInt bulat = BigInt.from(value);
       return _beriPemisahRibuan(bulat.toString());
     } else {
-      // batasi 6 angka di belakang koma biar tidak kepanjangan
+      
       String teks = value.toStringAsFixed(6);
       teks = teks.replaceAll(RegExp(r'0+$'), '');
       teks = teks.replaceAll(RegExp(r'\.$'), '');
@@ -148,7 +146,7 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
               ),
               decoration: const InputDecoration(
                 labelText: 'Angka pertama',
-                hintText: 'contoh: 100000000',
+                hintText: 'contoh: 1',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -171,7 +169,7 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
               ),
               decoration: const InputDecoration(
                 labelText: 'Angka kedua',
-                hintText: 'contoh: 250000000',
+                hintText: 'contoh: 2',
                 border: OutlineInputBorder(),
               ),
             ),
