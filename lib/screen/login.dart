@@ -30,14 +30,13 @@ class _LoginScreenState extends State<LoginScreen> {
   int _secondsRemaining = 0;
   Timer? _timer;
 
-  // ---- LOGIKA ----
+  // ---- LOGIKA (tidak berubah dari sebelumnya) ----
   void _cekLogin() {
     if (_isLocked) return;
 
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
-    // Validasi field kosong -> TIDAK dihitung sebagai percobaan gagal
     if (username.isEmpty || password.isEmpty) {
       setState(() {
         _hasError = true;
@@ -46,13 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Cek kombinasi username & password
     if (username == _validUsername && password == _validPassword) {
-      // Berhasil -> reset counter, lalu pindah ke Home
       _failedAttempts = 0;
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-      // Gagal -> hitung sebagai salah satu dari 5 percobaan
       _failedAttempts++;
       setState(() {
         _hasError = true;
@@ -102,93 +98,142 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Login'),
-        backgroundColor: Colors.white,
-        foregroundColor: _primaryColor,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Icon(Icons.lock_outline, size: 64, color: _primaryColor),
-            const SizedBox(height: 32),
-
-            // Username
-            TextField(
-              controller: _usernameController,
-              onChanged: (_) {
-                if (_hasError) {
-                  setState(() {
-                    _hasError = false;
-                    _errorMessage = null;
-                  });
-                }
-              },
-              decoration: _buildInputDecoration(
-                label: 'Username',
-                icon: Icons.person_outline,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Password
-            TextField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              onChanged: (_) {
-                if (_hasError) {
-                  setState(() {
-                    _hasError = false;
-                    _errorMessage = null;
-                  });
-                }
-              },
-              decoration: _buildInputDecoration(
-                label: 'Password',
-                icon: Icons.lock_outline,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    color: _primaryColor,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Judul aplikasi
+                  const Text(
+                    'Aplikasi Matematika',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: _primaryColor,
+                    ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
+                  const SizedBox(height: 32),
+
+                  // Card berisi form login
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Masuk ke Akun',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: _primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Username
+                          TextField(
+                            controller: _usernameController,
+                            onChanged: (_) {
+                              if (_hasError) {
+                                setState(() {
+                                  _hasError = false;
+                                  _errorMessage = null;
+                                });
+                              }
+                            },
+                            decoration: _buildInputDecoration(
+                              label: 'Username',
+                              icon: Icons.person_outline,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Password
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            onChanged: (_) {
+                              if (_hasError) {
+                                setState(() {
+                                  _hasError = false;
+                                  _errorMessage = null;
+                                });
+                              }
+                            },
+                            decoration: _buildInputDecoration(
+                              label: 'Password',
+                              icon: Icons.lock_outline,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: _primaryColor,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+
+                          // Pesan error
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 24),
+
+                          // Tombol Masuk
+                          ElevatedButton(
+                            onPressed: _isLocked ? null : _cekLogin,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _primaryColor,
+                              disabledBackgroundColor: Colors.grey,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              _isLocked
+                                  ? 'Tunggu $_secondsRemaining detik'
+                                  : 'Masuk',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-
-            // Pesan error
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red, fontSize: 13),
-              ),
-            ],
-
-            const SizedBox(height: 24),
-
-            // Tombol Masuk
-            ElevatedButton(
-              onPressed: _isLocked ? null : _cekLogin,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
-                disabledBackgroundColor: Colors.grey,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: Text(
-                _isLocked ? 'Tunggu $_secondsRemaining detik' : 'Masuk',
-                style: const TextStyle(fontSize: 16, color: Colors.white),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
