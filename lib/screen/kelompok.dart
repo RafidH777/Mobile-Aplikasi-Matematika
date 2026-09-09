@@ -7,7 +7,7 @@ class KelompokScreen extends StatelessWidget {
 
   // TODO: ganti dengan nama & NIM anggota kelompok yang sebenarnya
   static const List<Map<String, String>> _anggota = [
-    {'nama': 'Septian Zduhud Dwi N', 'nim': '124240043'},
+    {'nama': 'Septian Zduhud Dwi', 'nim': '124240043'},
     {'nama': 'Muhammad Chusna Ashidiqi', 'nim': '124240054'},
     {'nama': 'Muhammad Rafid Habibi', 'nim': '124240060'},
     {'nama': 'Akrama Naufa Aundafi', 'nim': '124240063'},
