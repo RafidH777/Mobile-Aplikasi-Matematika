@@ -5,7 +5,6 @@ class KelompokScreen extends StatelessWidget {
 
   static const Color _primaryColor = Color(0xFF1A1A1A);
 
-  // TODO: ganti dengan nama & NIM anggota kelompok yang sebenarnya
   static const List<Map<String, String>> _anggota = [
     {'nama': 'Septian Zduhud Dwi', 'nim': '124240043'},
     {'nama': 'Muhammad Chusna Ashidiqi', 'nim': '124240054'},
