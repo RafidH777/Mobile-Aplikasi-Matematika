@@ -14,6 +14,9 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
   String _operator = '+';
   String _hasil = '';
 
+  
+  static const int _presisiBagi = 20;
+
   @override
   void dispose() {
     _angka1Controller.dispose();
@@ -25,83 +28,124 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
     final teks1 = _angka1Controller.text.trim();
     final teks2 = _angka2Controller.text.trim();
 
-    
     if (teks1.isEmpty || teks2.isEmpty) {
       setState(() => _hasil = 'Input tidak boleh kosong');
       return;
     }
 
-    
-    final angka1 = double.tryParse(teks1.replaceAll(',', '.'));
-    final angka2 = double.tryParse(teks2.replaceAll(',', '.'));
+    final desimal1 = _parseDesimal(teks1.replaceAll(',', '.'));
+    final desimal2 = _parseDesimal(teks2.replaceAll(',', '.'));
 
-    if (angka1 == null || angka2 == null) {
-      setState(() => _hasil = 'Bilangan tak valid');
-      return;
-    }
-
-    
-    if (angka1.isNaN || angka2.isNaN || angka1.isInfinite || angka2.isInfinite) {
+    if (desimal1 == null || desimal2 == null) {
       setState(() => _hasil = 'Bilangan tak valid');
       return;
     }
 
     try {
-      double hasilOperasi;
-
       switch (_operator) {
         case '+':
-          hasilOperasi = angka1 + angka2;
+          _tampilkanHasil(_tambah(desimal1, desimal2));
           break;
         case '-':
-          hasilOperasi = angka1 - angka2;
+          _tampilkanHasil(_kurang(desimal1, desimal2));
           break;
         case '×':
-          hasilOperasi = angka1 * angka2;
+          _tampilkanHasil(_kali(desimal1, desimal2));
           break;
         case '÷':
-          
-          if (angka2 == 0) {
+          if (desimal2.nilai == BigInt.zero) {
             setState(() => _hasil = 'Tidak bisa membagi dengan nol');
             return;
           }
-          hasilOperasi = angka1 / angka2;
+          _tampilkanHasil(_bagi(desimal1, desimal2));
           break;
         default:
           setState(() => _hasil = 'Operator tidak dikenali');
-          return;
       }
-
-      
-      if (hasilOperasi.isInfinite || hasilOperasi.isNaN) {
-        setState(() => _hasil = 'Hasil terlalu besar / tidak valid');
-        return;
-      }
-
-      setState(() => _hasil = _formatHasil(hasilOperasi));
     } catch (e) {
-      
       setState(() => _hasil = 'Terjadi kesalahan saat menghitung');
     }
   }
 
-  
-  
-  String _formatHasil(double value) {
-    final bool isBulat = value == value.roundToDouble();
+  void _tampilkanHasil(_Desimal hasil) {
+    setState(() => _hasil = _formatDesimal(hasil));
+  }
 
-    if (isBulat) {
-      final BigInt bulat = BigInt.from(value);
-      return _beriPemisahRibuan(bulat.toString());
+  
+
+  _Desimal? _parseDesimal(String teks) {
+    final bool negatif = teks.startsWith('-');
+    final String s = negatif ? teks.substring(1) : teks;
+
+    if (!RegExp(r'^\d+(\.\d+)?$').hasMatch(s)) return null;
+
+    final parts = s.split('.');
+    final bagianBulat = parts[0];
+    final bagianDesimal = parts.length > 1 ? parts[1] : '';
+    final gabungan = bagianBulat + bagianDesimal;
+
+    BigInt nilai = BigInt.parse(gabungan);
+    if (negatif) nilai = -nilai;
+
+    return _Desimal(nilai: nilai, skala: bagianDesimal.length);
+  }
+
+  BigInt _pangkat10(int n) => BigInt.from(10).pow(n);
+
+ 
+  ({BigInt v1, BigInt v2, int skala}) _samakanSkala(_Desimal a, _Desimal b) {
+    final skalaMaks = a.skala > b.skala ? a.skala : b.skala;
+    final v1 = a.nilai * _pangkat10(skalaMaks - a.skala);
+    final v2 = b.nilai * _pangkat10(skalaMaks - b.skala);
+    return (v1: v1, v2: v2, skala: skalaMaks);
+  }
+
+  _Desimal _tambah(_Desimal a, _Desimal b) {
+    final s = _samakanSkala(a, b);
+    return _Desimal(nilai: s.v1 + s.v2, skala: s.skala);
+  }
+
+  _Desimal _kurang(_Desimal a, _Desimal b) {
+    final s = _samakanSkala(a, b);
+    return _Desimal(nilai: s.v1 - s.v2, skala: s.skala);
+  }
+
+  _Desimal _kali(_Desimal a, _Desimal b) {
+    return _Desimal(nilai: a.nilai * b.nilai, skala: a.skala + b.skala);
+  }
+
+  
+  _Desimal _bagi(_Desimal a, _Desimal b) {
+   
+    final pembilang = a.nilai * _pangkat10(b.skala + _presisiBagi);
+    final penyebut = b.nilai * _pangkat10(a.skala);
+    final hasilBagi = pembilang ~/ penyebut; 
+    return _Desimal(nilai: hasilBagi, skala: _presisiBagi);
+  }
+
+  String _formatDesimal(_Desimal d) {
+    final bool negatif = d.nilai.isNegative;
+    BigInt absNilai = negatif ? -d.nilai : d.nilai;
+    String teks = absNilai.toString().padLeft(d.skala + 1, '0');
+
+    String bagianBulat;
+    String bagianDesimal;
+
+    if (d.skala == 0) {
+      bagianBulat = teks;
+      bagianDesimal = '';
     } else {
-      
-      String teks = value.toStringAsFixed(6);
-      teks = teks.replaceAll(RegExp(r'0+$'), '');
-      teks = teks.replaceAll(RegExp(r'\.$'), '');
-      final parts = teks.split('.');
-      final bagianDepan = _beriPemisahRibuan(parts[0]);
-      return parts.length > 1 ? '$bagianDepan,${parts[1]}' : bagianDepan;
+      bagianBulat = teks.substring(0, teks.length - d.skala);
+      bagianDesimal = teks.substring(teks.length - d.skala);
+      bagianDesimal = bagianDesimal.replaceAll(RegExp(r'0+$'), ''); // buang nol ekor
     }
+
+    final bagianBulatFormatted = _beriPemisahRibuan(bagianBulat);
+    final hasilAkhir = bagianDesimal.isNotEmpty
+        ? '$bagianBulatFormatted,$bagianDesimal'
+        : bagianBulatFormatted;
+
+    return negatif ? '-$hasilAkhir' : hasilAkhir;
   }
 
   String _beriPemisahRibuan(String angka) {
@@ -192,4 +236,11 @@ class _KalkulatorScreenState extends State<KalkulatorScreen> {
       ),
     );
   }
+}
+
+
+class _Desimal {
+  final BigInt nilai;
+  final int skala;
+  const _Desimal({required this.nilai, required this.skala});
 }
